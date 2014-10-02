@@ -179,7 +179,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private final static int attach_video = 8;
     private final static int attach_document = 9;
     private final static int attach_location = 10;
+    private final static int attach_draw = 122;
     private final static int chat_menu_avatar = 11;
+
 
     public ChatActivity(Bundle args) {
         super(args);
@@ -567,6 +569,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             item.addSubItem(attach_video, LocaleController.getString("ChatVideo", R.string.ChatVideo), R.drawable.ic_attach_video);
             item.addSubItem(attach_document, LocaleController.getString("ChatDocument", R.string.ChatDocument), R.drawable.ic_ab_doc);
             item.addSubItem(attach_location, LocaleController.getString("ChatLocation", R.string.ChatLocation), R.drawable.ic_attach_location);
+            item.addSubItem(attach_draw, LocaleController.getString("Draw", R.string.ChatDraw), R.drawable.ic_attach_draw);
             menuItem = item;
 
             ActionBarMenu actionMode = actionBarLayer.createActionMode();
