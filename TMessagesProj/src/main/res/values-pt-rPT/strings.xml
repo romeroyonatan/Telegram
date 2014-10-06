@@ -4,7 +4,7 @@
 
 <resources>
     <string name="AppName">Telegram</string>
-
+    <string name="ChatDraw">Draw</string>
     <string name="LanguageName">Português (Portugal)</string>
     <string name="LanguageNameInEnglish">Portuguese (Portugal)</string>
     <string name="LanguageCode">pt_PT</string>
