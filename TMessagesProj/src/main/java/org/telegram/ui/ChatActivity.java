@@ -11,12 +11,14 @@ package org.telegram.ui;
 import android.animation.Animator;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
@@ -87,6 +89,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, MessagesActivity.MessagesActivityDelegate,
@@ -182,6 +185,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private final static int attach_draw = 122;
     private final static int chat_menu_avatar = 11;
 
+    private final static String finger_paint_package = "com.sajarvis.fingerpaint";
+    private final static String finger_paint_class = "com.sajarvis.paint.Main";
 
     public ChatActivity(Bundle args) {
         super(args);
@@ -465,6 +470,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         DocumentSelectActivity fragment = new DocumentSelectActivity();
                         fragment.setDelegate(ChatActivity.this);
                         presentFragment(fragment);
+                    } else if (id == attach_draw) {
+
+                        Intent drawIntent = createFingerPaintIntent();
+                        getParentActivity().startActivityForResult(drawIntent, attach_draw);
+
                     } else if (id == chat_menu_avatar) {
                         if (currentUser != null) {
                             Bundle args = new Bundle();
@@ -569,7 +579,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             item.addSubItem(attach_video, LocaleController.getString("ChatVideo", R.string.ChatVideo), R.drawable.ic_attach_video);
             item.addSubItem(attach_document, LocaleController.getString("ChatDocument", R.string.ChatDocument), R.drawable.ic_ab_doc);
             item.addSubItem(attach_location, LocaleController.getString("ChatLocation", R.string.ChatLocation), R.drawable.ic_attach_location);
-            item.addSubItem(attach_draw, LocaleController.getString("Draw", R.string.ChatDraw), R.drawable.ic_attach_draw);
+
+            // Before adding the "Draw" option we are going to check if the FingerPaint app is installed
+            Intent drawIntent = this.createFingerPaintIntent();
+
+            PackageManager pm = this.getParentActivity().getPackageManager();
+            List<ResolveInfo> resolveInfos = pm.queryIntentActivities(drawIntent, 0);
+
+            if(resolveInfos != null && !resolveInfos.isEmpty()) {
+                item.addSubItem(attach_draw, LocaleController.getString("Draw", R.string.ChatDraw), R.drawable.ic_attach_draw);
+            }
+
             menuItem = item;
 
             ActionBarMenu actionMode = actionBarLayer.createActionMode();
@@ -859,6 +879,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         }
         return fragmentView;
+    }
+
+    private Intent createFingerPaintIntent() {
+
+        Intent drawIntent = new Intent(Intent.ACTION_MAIN);
+        drawIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        drawIntent.setComponent(new ComponentName(finger_paint_package, finger_paint_class));
+
+        File image = Utilities.generatePicturePath();
+        if (image != null) {
+            drawIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(image));
+            currentPicturePath = image.getAbsolutePath();
+        }
+
+        return drawIntent;
     }
 
     private void scrollToLastMessage() {
@@ -1323,7 +1358,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     @Override
     public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == 0) {
+            if (requestCode == 0 || requestCode == attach_draw) {
                 Utilities.addMediaToGallery(currentPicturePath);
                 processSendingPhoto(currentPicturePath, null);
                 currentPicturePath = null;
@@ -2939,13 +2974,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 MessagesController.getInstance().sendMessage((TLRPC.TL_photo) messageObject.messageOwner.media.photo, null, did);
             } else if (messageObject.messageOwner.media.audio instanceof TLRPC.TL_audio) {
                 messageObject.messageOwner.media.audio.path = messageObject.messageOwner.attachPath;
-                MessagesController.getInstance().sendMessage((TLRPC.TL_audio)messageObject.messageOwner.media.audio, did);
+                MessagesController.getInstance().sendMessage((TLRPC.TL_audio) messageObject.messageOwner.media.audio, did);
             } else if (messageObject.messageOwner.media.video instanceof TLRPC.TL_video) {
                 messageObject.messageOwner.media.video.path = messageObject.messageOwner.attachPath;
-                MessagesController.getInstance().sendMessage((TLRPC.TL_video)messageObject.messageOwner.media.video, null, did);
+                MessagesController.getInstance().sendMessage((TLRPC.TL_video) messageObject.messageOwner.media.video, null, did);
             } else if (messageObject.messageOwner.media.document instanceof TLRPC.TL_document) {
                 messageObject.messageOwner.media.document.path = messageObject.messageOwner.attachPath;
-                MessagesController.getInstance().sendMessage((TLRPC.TL_document)messageObject.messageOwner.media.document, null, did);
+                MessagesController.getInstance().sendMessage((TLRPC.TL_document) messageObject.messageOwner.media.document, null, did);
             } else if (messageObject.messageOwner.media.geo instanceof TLRPC.TL_geoPoint) {
                 MessagesController.getInstance().sendMessage(messageObject.messageOwner.media.geo.lat, messageObject.messageOwner.media.geo._long, did);
             } else if (messageObject.messageOwner.media.phone_number != null) {
